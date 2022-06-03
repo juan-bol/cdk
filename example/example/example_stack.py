@@ -1,0 +1,29 @@
+from aws_cdk import (
+    # Duration,
+    Stack,
+    aws_lambda as lambda_,
+    aws_s3 as s3,
+)
+from constructs import Construct
+
+class ExampleStack(Stack):
+
+    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+        super().__init__(scope, construct_id, **kwargs)
+
+        self.create_lambda("MyLambdaUpdate")
+        self.create_s3("MyBucket")
+
+    def create_lambda(self, lambdaName):
+
+        with open("resources/lambda.py", encoding="utf8") as fp:
+            handler_code = fp.read()
+
+        lambda_.Function(self, lambdaName,
+            code=lambda_.InlineCode(handler_code),
+            handler="index.lambda_handler",
+            runtime=lambda_.Runtime.PYTHON_3_9
+        )
+    
+    def create_s3(self, s3_name):
+        bucket = s3.Bucket(self, "MyFirstBucket", versioned=True)

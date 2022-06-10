@@ -1,36 +1,59 @@
-resource "aws_iam_role" "iam_for_lambda" {
-  name = "iam_for_lambda"
+# resource "aws_iam_role" "iam_for_lambda" {
+#   name = "iam_for_lambda"
 
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Action": "sts:AssumeRole",
-      "Principal": {
-        "Service": "lambda.amazonaws.com"
-      },
-      "Effect": "Allow",
-      "Sid": ""
-    }
-  ]
+#   assume_role_policy = <<EOF
+# {
+#   "Version": "2012-10-17",
+#   "Statement": [
+#     {
+#       "Action": "sts:AssumeRole",
+#       "Principal": {
+#         "Service": "lambda.amazonaws.com"
+#       },
+#       "Effect": "Allow",
+#       "Sid": ""
+#     }
+#   ]
+# }
+# EOF
+# }
+
+# resource "aws_lambda_function" "lambda" {
+#   # If the file is not in the current working directory you will need to include a 
+#   # path.module in the filename.
+#   filename      = "./resources/lambda.zip"
+#   function_name = "lambda_terraform"
+#   role          = aws_iam_role.iam_for_lambda.arn
+#   handler       = "index.lambda_handler"
+
+#   # The filebase64sha256() function is available in Terraform 0.11.12 and later
+#   # For Terraform 0.11.11 and earlier, use the base64sha256() function and the file() function:
+#   # source_code_hash = "${base64sha256(file("lambda_function_payload.zip"))}"
+#   source_code_hash = filebase64sha256("./resources/lambda.zip")
+
+#   runtime = "python3.7"
+
+# }
+
+resource "aws_s3_bucket" "example" {
+  bucket = "terraform-bucket-example"
+  website {
+    index_document = "index.html"
+  }
+
 }
-EOF
+
+# Upload an object
+resource "aws_s3_bucket_object" "object" {
+  key    = "index.html"
+  bucket = aws_s3_bucket.example.id
+  acl    = "public-read" 
+  content_type = "text/html"
+  source = "./resources/index.html"
+  etag = filemd5("./resources/index.html")
+
 }
 
-resource "aws_lambda_function" "lambda" {
-  # If the file is not in the current working directory you will need to include a 
-  # path.module in the filename.
-  filename      = "./resources/lambda.zip"
-  function_name = "lambda_terraform"
-  role          = aws_iam_role.iam_for_lambda.arn
-  handler       = "index.lambda_handler"
-
-  # The filebase64sha256() function is available in Terraform 0.11.12 and later
-  # For Terraform 0.11.11 and earlier, use the base64sha256() function and the file() function:
-  # source_code_hash = "${base64sha256(file("lambda_function_payload.zip"))}"
-  source_code_hash = filebase64sha256("./resources/lambda.zip")
-
-  runtime = "python3.7"
-
+output "bucket_endpoint" {
+  value = format("http://%s",aws_s3_bucket.example.website_endpoint)
 }

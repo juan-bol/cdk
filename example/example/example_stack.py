@@ -12,7 +12,7 @@ class ExampleStack(Stack):
         super().__init__(scope, construct_id, **kwargs)
 
         self.create_lambda("MyLambdaUpdate")
-        self.create_s3("MyBucket")
+        # self.create_s3("MyBucket")
 
     def create_lambda(self, lambdaName):
 
@@ -22,7 +22,7 @@ class ExampleStack(Stack):
         lambda_.Function(self, lambdaName,
             code=lambda_.InlineCode(handler_code),
             handler="index.lambda_handler",
-            runtime=lambda_.Runtime.PYTHON_3_9
+            runtime=lambda_.Runtime.PYTHON_3_7
         )
     
     def create_s3(self, s3_name):

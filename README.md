@@ -15,4 +15,23 @@ pulumi requieres the access keys as env vars, not enough with aws configured
 
 CDK is just a wrapper around CloudFormation that enables us to write our infrastructure as code using a programming language (TypeScript, Python, Java ...), rather than a configuration language (yaml, json)
 
+CDK adds default tags to resoures to track them on Cloud Formation Stack
 
+
+Commands:
+
+terraform init
+terraform plan
+terraform appply
+terraform state list
+
+cdk init --language python
+cdk synth
+cdk diff
+cdk deploy
+
+pulumi login
+pulumi new aws-python
+pulumi up
+pulumi stack
+pulumi stack output

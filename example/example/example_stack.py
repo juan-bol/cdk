@@ -4,6 +4,7 @@ from aws_cdk import (
     aws_lambda as lambda_,
     aws_s3 as s3,
     aws_s3_deployment as s3deploy,
+    aws_dynamodb as dynamodb,
     CfnOutput
 )
 from constructs import Construct
@@ -14,7 +15,21 @@ class ExampleStack(Stack):
         super().__init__(scope, construct_id, **kwargs)
 
         # self.create_lambda("MyLambdaUpdate")
-        self.create_s3("MyBucket")
+        self.create_s3("my-bucket-cdk")
+
+    def create_app(self):
+        table = dynamodb.Table(self, "Table",
+            partition_key=dynamodb.Attribute(name="id", type=dynamodb.AttributeType.STRING)
+        )
+        lambda_function = lambda_.Function(self, "HelloFunction",
+            runtime=lambda_.Runtime.NODEJS_14_X,
+            handler="handler.saveHello",
+            code=lambda_.Code.from_asset(path.join(__dirname, "resources")),
+            environment={
+                GREETINGS_TABLE: table.tableName,
+            }
+        )
+        
 
     def create_lambda(self, lambdaName):
 
@@ -28,13 +43,17 @@ class ExampleStack(Stack):
         )
     
     def create_s3(self, s3_name):
-        bucket = s3.Bucket(self, "MyFirstBucket", 
-            website_index_document= 'index.html'
+        bucket = s3.Bucket(self, s3_name,
+            bucket_name=s3_name,
+            website_index_document= 'index.html',
+            # removal_policy = cdk.RemovalPolicy.DESTROY,
+            # public_read_access=True
         )
         s3deploy.BucketDeployment(self, "DeployWebsite",
             sources=[s3deploy.Source.asset("./resources")],
             destination_bucket=bucket,
-            content_type='text/html'
+            # content_type='text/html',
+            # access_control=s3.BucketAccessControl.PUBLIC_READ
         )
         # CfnOutput(self, "bucket_endpoint", value=bucket.bucketArn)
         

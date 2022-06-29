@@ -26,7 +26,7 @@ terraform apply
 terraform destroy
 terraform state list
 
-cdk init --language python
+cdk init --language typescript
 cdk bootstrap
 cdk synth
 cdk diff
@@ -34,8 +34,8 @@ cdk deploy
 cdek destroy
 
 pulumi login
-pulumi new aws-python
+pulumi new aws-typescript
 pulumi up
-destroy
+pulumi destroy
 pulumi stack
 pulumi stack output

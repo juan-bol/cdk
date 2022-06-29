@@ -1,0 +1,3 @@
+name: example_pulumi_ts
+runtime: nodejs
+description: A minimal AWS TypeScript Pulumi program

@@ -31,7 +31,7 @@ cdk bootstrap
 cdk synth
 cdk diff
 cdk deploy
-cdek destroy
+cdk destroy
 
 pulumi login
 pulumi new aws-typescript

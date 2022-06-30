@@ -24,9 +24,11 @@ export class ExampleTsStack extends Stack {
     });
 
     const deployment = new s3Deployment.BucketDeployment(this, "deployStaticWebsite", {
-      sources: [s3Deployment.Source.asset("./resources")],
+      sources: [s3Deployment.Source.asset("./resources", { exclude: ['**', '!index.html']})],
       destinationBucket: myBucket,
       accessControl: s3.BucketAccessControl.PUBLIC_READ,
+      contentType: "text/html",
+      contentDisposition: "inline",
     });
 
     // API Gateway with dynamoDB

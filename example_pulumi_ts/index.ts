@@ -26,7 +26,6 @@ const deployment = new aws.s3.BucketObject("deployStaticWebsite", {
     .digest("hex"),
 });
 
-// Export the endpoint of the bucket
 export const bucketName = myBucket.websiteEndpoint;
 
 // API Gateway with dynamoDB TODO
@@ -85,24 +84,6 @@ const policyAttach = new aws.iam.RolePolicyAttachment("lambdaPolicyAttach", {
 let assetArchive = new pulumi.asset.AssetArchive({
   "handler.js": new pulumi.asset.FileAsset("./resources/handler.js"),
 });
-
-// let lambdaMap = new Map<String, Object>([
-//   [
-//     "saveHello",
-//     {
-//       apiPath: "hello",
-//       apiMethod: "POST",
-//     },
-//   ],
-//   [
-//     "getHello",
-//     {
-//       apiPath: "hello",
-//       apiMethod: "GET",
-//     },
-//   ],
-// ]);
-
 
 const saveHelloFunction = new aws.lambda.Function("SaveHelloFunction", {
   code: assetArchive,

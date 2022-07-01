@@ -1,7 +1,6 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 import * as awsx from "@pulumi/awsx";
-import { Console } from "console";
 
 const crypto = require("crypto");
 const fs = require("fs");
@@ -27,7 +26,7 @@ const deployment = new aws.s3.BucketObject("deployStaticWebsite", {
     .digest("hex"),
 });
 
-// Export the name of the bucket
+// Export the endpoint of the bucket
 export const bucketName = myBucket.websiteEndpoint;
 
 // API Gateway with dynamoDB TODO
@@ -61,22 +60,6 @@ const iamForLambda = new aws.iam.Role("iamForLambda", {
 `,
 });
 
-let assetArchive = new pulumi.asset.AssetArchive({
-  "handler.js": new pulumi.asset.FileAsset("./resources/handler.js"),
-});
-
-const saveHelloFunction = new aws.lambda.Function("testLambda", {
-  code: assetArchive,
-  role: iamForLambda.arn,
-  handler: "handler.saveHello",
-  runtime: "nodejs14.x",
-  environment: {
-    variables: {
-      GREETINGS_TABLE: greetingsTable.name,
-    },
-  },
-});
-
 const policy = new aws.iam.Policy("policy", {
   path: "/",
   description: "My test policy",
@@ -94,10 +77,71 @@ const policy = new aws.iam.Policy("policy", {
   ),
 });
 
-const lambdaLogs = new aws.iam.RolePolicyAttachment("lambdaPolicyAttach", {
-    role: iamForLambda.name,
-    policyArn: policy.arn,
+const policyAttach = new aws.iam.RolePolicyAttachment("lambdaPolicyAttach", {
+  role: iamForLambda.name,
+  policyArn: policy.arn,
 });
 
+let assetArchive = new pulumi.asset.AssetArchive({
+  "handler.js": new pulumi.asset.FileAsset("./resources/handler.js"),
+});
 
-export const tableName = greetingsTable.arn;
+// let lambdaMap = new Map<String, Object>([
+//   [
+//     "saveHello",
+//     {
+//       apiPath: "hello",
+//       apiMethod: "POST",
+//     },
+//   ],
+//   [
+//     "getHello",
+//     {
+//       apiPath: "hello",
+//       apiMethod: "GET",
+//     },
+//   ],
+// ]);
+
+
+const saveHelloFunction = new aws.lambda.Function("SaveHelloFunction", {
+  code: assetArchive,
+  role: iamForLambda.arn,
+  handler: "handler.saveHello",
+  runtime: "nodejs14.x",
+  environment: {
+    variables: {
+      GREETINGS_TABLE: greetingsTable.name,
+    },
+  },
+});
+
+const getHelloFunction = new aws.lambda.Function("GetHelloFunction", {
+  code: assetArchive,
+  role: iamForLambda.arn,
+  handler: "handler.getHello",
+  runtime: "nodejs14.x",
+  environment: {
+    variables: {
+      GREETINGS_TABLE: greetingsTable.name,
+    },
+  },
+});
+
+const saveRoute: awsx.apigateway.EventHandlerRoute = {
+  path: "/hello",
+  method: "POST",
+  eventHandler: saveHelloFunction,
+};
+
+const getRoute: awsx.apigateway.EventHandlerRoute = {
+  path: "/hello",
+  method: "GET",
+  eventHandler: getHelloFunction,
+};
+
+const site = new awsx.apigateway.API("helloApi", {
+  routes: [saveRoute, getRoute],
+});
+
+export const siteUrl = site.url;

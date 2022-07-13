@@ -58,8 +58,20 @@ data "aws_iam_policy_document" "policy_doc" {
   version = "2012-10-17"
   statement {
     actions = [
-      "dynamodb:*",
+      "dynamodb:BatchGetItem",
+      "dynamodb:BatchWriteItem",
+      "dynamodb:ConditionCheckItem",
+      "dynamodb:DeleteItem",
+      "dynamodb:DescribeTable",
+      "dynamodb:GetItem",
+      "dynamodb:GetRecords",
+      "dynamodb:GetShardIterator",
+      "dynamodb:PutItem",
+      "dynamodb:Query",
+      "dynamodb:Scan",
+      "dynamodb:UpdateItem"
     ]
+    effect = "Allow"
     resources = [
       "${aws_dynamodb_table.greetingsTable.arn}",
     ]
@@ -84,12 +96,17 @@ data "archive_file" "lambda_zip" {
 }
 
 resource "aws_lambda_function" "saveHelloFunction" {
-  filename         = "./resources/lambda.zip"
+  filename         = data.archive_file.lambda_zip.output_path
   function_name    = "lambda_terraform"
   role             = aws_iam_role.iam_for_lambda.arn
-  handler          = "index.saveHello"
+  handler          = "handler.saveHello"
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
   runtime          = "nodejs12.x"
+  environment {
+    variables = {
+      GREETINGS_TABLE = aws_dynamodb_table.greetingsTable.name
+    }
+  }
 }
 
 resource "aws_api_gateway_rest_api" "api" {
@@ -102,17 +119,18 @@ resource "aws_api_gateway_resource" "resource" {
   rest_api_id = aws_api_gateway_rest_api.api.id
 }
 
-resource "aws_api_gateway_method" "method" {
+resource "aws_api_gateway_method" "post_method" {
   rest_api_id   = aws_api_gateway_rest_api.api.id
   resource_id   = aws_api_gateway_resource.resource.id
   http_method   = "POST"
   authorization = "NONE"
+  api_key_required = false
 }
 
 resource "aws_api_gateway_integration" "integration" {
   rest_api_id             = aws_api_gateway_rest_api.api.id
   resource_id             = aws_api_gateway_resource.resource.id
-  http_method             = aws_api_gateway_method.method.http_method
+  http_method             = aws_api_gateway_method.post_method.http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.saveHelloFunction.invoke_arn
@@ -124,9 +142,22 @@ resource "aws_lambda_permission" "apigw_lambda" {
   function_name = aws_lambda_function.saveHelloFunction.function_name
   principal     = "apigateway.amazonaws.com"
 
-  source_arn = "arn:aws:execute-api:${var.myregion}:${var.accountId}:${aws_api_gateway_rest_api.api.id}/*/${aws_api_gateway_method.method.http_method}${aws_api_gateway_resource.resource.path}"
+  source_arn = "arn:aws:execute-api:${var.myregion}:${var.accountId}:${aws_api_gateway_rest_api.api.id}/*/${aws_api_gateway_method.post_method.http_method}${aws_api_gateway_resource.resource.path}"
+}
+
+resource "aws_api_gateway_deployment" "deployment" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  depends_on = [
+    aws_api_gateway_integration.integration
+  ]
+}
+
+resource "aws_api_gateway_stage" "stage" {
+  deployment_id = aws_api_gateway_deployment.deployment.id
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  stage_name = "prod"
 }
 
 output "site_url" {
-  value = format("http://%s.execute-api.%s.amazonaws.com/%s", aws_api_gateway_rest_api.api.id, var.myregion, aws_api_gateway_method.method.http_method)
+  value = format("%s%s/%s",aws_api_gateway_deployment.deployment.invoke_url,aws_api_gateway_stage.stage.stage_name, aws_api_gateway_resource.resource.path_part)
 }

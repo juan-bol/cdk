@@ -174,7 +174,7 @@ resource "aws_lambda_permission" "apigw_lambda_permission_post" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.saveHelloFunction.function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn = "arn:aws:execute-api:${var.myregion}:${var.accountId}:${aws_api_gateway_rest_api.api.id}/*/${aws_api_gateway_method.post_method.http_method}${aws_api_gateway_resource.resource.path}"
+  source_arn = "arn:aws:execute-api:${var.myregion}:${var.accountId}:${aws_api_gateway_rest_api.api.id}/*/${aws_api_gateway_integration.integration_post.integration_http_method}${aws_api_gateway_resource.resource.path}"
 }
 
 resource "aws_lambda_permission" "apigw_lambda_permission_get" {
@@ -182,7 +182,7 @@ resource "aws_lambda_permission" "apigw_lambda_permission_get" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.getHelloFunction.function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn = "arn:aws:execute-api:${var.myregion}:${var.accountId}:${aws_api_gateway_rest_api.api.id}/*/${aws_api_gateway_method.get_method.http_method}${aws_api_gateway_resource.resource.path}"
+  source_arn = "arn:aws:execute-api:${var.myregion}:${var.accountId}:${aws_api_gateway_rest_api.api.id}/*/*/*"
 }
 
 resource "aws_api_gateway_deployment" "deployment" {
